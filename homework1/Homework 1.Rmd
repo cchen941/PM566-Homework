@@ -8,6 +8,7 @@ always_allow_html:true
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(webshot)
 ```
 
 1. EDA Checklist 2-4:
@@ -50,17 +51,6 @@ Summary:
   2) I notice that there are negative values for 'Daily Mean PM2.5 Concentration'. This is the main issue of theses datasets.
   3) Most of summary value for 2004 data is higher than 2019 data.
 
-d) Figure out issue, replace negative values with NA or remove negative value
-
-```{r}
-pm_2004[pm_2004$`Daily Mean PM2.5 Concentration`<0] <- NA
-summary((pm_2004$`Daily Mean PM2.5 Concentration`))
-```
-```{r}
-pm_2019 <- pm_2019[`Daily Mean PM2.5 Concentration`>=0]
-summary((pm_2019$`Daily Mean PM2.5 Concentration`))
-```
-
 2. 
 a). Combine the two years of data into one data frame
 ```{r}
@@ -78,20 +68,38 @@ head(pm)
 ```
  c) Change the names of the key variables so that they are easier to refer to in your code.
 ```{r}
-#library(tidyverse)
-rename(pm, PM2.5_Concentration = 'Daily Mean PM2.5 Concentration')
+library(tidyverse)
+pm<-rename(pm, PM2.5_Concentration = 'Daily Mean PM2.5 Concentration')
 ```
  3. 
  a). Create a basic map in leaflet() that shows the locations of the sites (make sure to use different colors for each year)
 ```{r}
-
+library(leaflet)
+pal <- colorFactor(c('red', 'blue'), domain=pm$Year)
+map <- leaflet(pm) %>%
+  addProviderTiles('OpenStreetMap') %>%
+  addCircles(lng=pm$SITE_LONGITUDE, lat=pm$SITE_LATITUDE, opacity=1, fillOpacity=1, radius = 50, color = ~pal(Year))
+map
 ```
- 
  
  b). Summarize the spatial distribution of the monitoring sites.
+From the map, we can find that there are great number of sites gathering in Los Angeles district and San Jose district. And the distribution range is all over California. 
+
+4. 
+a). Check for any missing or implausible values of PM in the combined dataset. 
+As we mentioned before, we have negative values for concentration in the dataset.
 ```{r}
-
+table(pm$PM2.5_Concentration)
+is.na(pm$PM2.5_Concentration)
 ```
+It seems like no NA in this column.
 
+b). Explore the proportions of each and provide a summary of any temporal patterns you see in these observations.
 
- 
+```{r}
+negative <- pm[pm$PM2.5_Concentration <0]
+proportions = nrow(negative)/nrow(pm)
+proportions
+```
+From the calculation above, the proportions of negative value is 0.39%.It is a tiny proportion. 
+
