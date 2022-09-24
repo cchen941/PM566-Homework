@@ -89,8 +89,7 @@ a). Check for any missing or implausible values of PM in the combined dataset.
 As we mentioned before, we have negative values for concentration in the dataset.
 In addition, the we need to find the implausible big value and NA value.
 ```{r}
-table(pm$PM2.5_Concentration)
-is.na(pm$PM2.5_Concentration)
+which(is.na(pm$PM2.5_Concentration))
 mean(pm$PM2.5_Concentration)+3*sd(pm$PM2.5_Concentration)
 ```
 It seems like no NA in this column. The normal range of value is 0-33.
