@@ -1,0 +1,97 @@
+---
+title: "Homework1"
+author: "Chen Chen 6381370662"
+date: "`r Sys.Date()`"
+output: github_document
+always_allow_html:true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+1. EDA Checklist 2-4:
+a). Read in your data:read in the data using data.table()
+```{r read-data}
+library(readr)
+library(dplyr)
+pm_2004 <- data.table::fread("ad_viz_plotval_data-2004.csv")
+pm_2019 <- data.table::fread("ad_viz_plotval_data-2019.csv")
+```
+
+b).  For each of the two datasets, check the dimensions, headers, footers, variable names and variable types.
+```{r 2004-data}
+dim(pm_2004)
+head(pm_2004)
+tail(pm_2004)
+str(pm_2004)
+```
+```{r 2019-data}
+dim(pm_2019)
+head(pm_2019)
+tail(pm_2019)
+str(pm_2019)
+```
+
+c). Check for any data issues, particularly in the key variable we are analyzing.
+```{r}
+table(pm_2004$`Daily Mean PM2.5 Concentration`)
+```
+```{r}
+table(pm_2019$`Daily Mean PM2.5 Concentration`)
+```
+
+```{r}
+summary(pm_2004$`Daily Mean PM2.5 Concentration`)
+summary(pm_2019$`Daily Mean PM2.5 Concentration`)
+```
+Summary: 
+  1) For dimension, two datasets have same number of columns but 2019 data has much more rows.
+  2) I notice that there are negative values for 'Daily Mean PM2.5 Concentration'. This is the main issue of theses datasets.
+  3) Most of summary value for 2004 data is higher than 2019 data.
+
+d) Figure out issue, replace negative values with NA or remove negative value
+
+```{r}
+pm_2004[pm_2004$`Daily Mean PM2.5 Concentration`<0] <- NA
+summary((pm_2004$`Daily Mean PM2.5 Concentration`))
+```
+```{r}
+pm_2019 <- pm_2019[`Daily Mean PM2.5 Concentration`>=0]
+summary((pm_2019$`Daily Mean PM2.5 Concentration`))
+```
+
+2. 
+a). Combine the two years of data into one data frame
+```{r}
+pm <- rbind(pm_2004, pm_2019)
+head(pm)
+tail(pm)
+```
+b) Use the Date variable to create a new column for year, which will serve as an identifier. 
+```{r}
+library(lubridate)
+Date = as.Date.character(pm$Date, "%m/%d/%Y")
+Year <- year(Date)
+pm <- mutate(pm, Year)
+head(pm)
+```
+ c) Change the names of the key variables so that they are easier to refer to in your code.
+```{r}
+#library(tidyverse)
+rename(pm, PM2.5_Concentration = 'Daily Mean PM2.5 Concentration')
+```
+ 3. 
+ a). Create a basic map in leaflet() that shows the locations of the sites (make sure to use different colors for each year)
+```{r}
+
+```
+ 
+ 
+ b). Summarize the spatial distribution of the monitoring sites.
+```{r}
+
+```
+
+
+ 
