@@ -3,7 +3,6 @@ title: "Homework1"
 author: "Chen Chen 6381370662"
 date: "`r Sys.Date()`"
 output: github_document
-always_allow_html:true
 ---
 
 ```{r setup, include=FALSE}
@@ -61,7 +60,7 @@ tail(pm)
 b) Use the Date variable to create a new column for year, which will serve as an identifier. 
 ```{r}
 library(lubridate)
-Date = as.Date.character(pm$Date, "%m/%d/%Y")
+Date <- as.Date.character(pm$Date, "%m/%d/%Y")
 Year <- year(Date)
 pm <- mutate(pm, Year)
 head(pm)
@@ -88,18 +87,64 @@ From the map, we can find that there are great number of sites gathering in Los 
 4. 
 a). Check for any missing or implausible values of PM in the combined dataset. 
 As we mentioned before, we have negative values for concentration in the dataset.
+In addition, the we need to find the implausible big value and NA value.
 ```{r}
 table(pm$PM2.5_Concentration)
 is.na(pm$PM2.5_Concentration)
+mean(pm$PM2.5_Concentration)+3*sd(pm$PM2.5_Concentration)
 ```
-It seems like no NA in this column.
-
+It seems like no NA in this column. The normal range of value is 0-33.
 b). Explore the proportions of each and provide a summary of any temporal patterns you see in these observations.
 
 ```{r}
 negative <- pm[pm$PM2.5_Concentration <0]
-proportions = nrow(negative)/nrow(pm)
-proportions
+proportion1 = nrow(negative)/nrow(pm)
+proportion1
+bigvalue <- pm[pm$PM2.5_Concentration >33]
+proportion2 = nrow(bigvalue)/nrow(pm)
+proportion2
 ```
-From the calculation above, the proportions of negative value is 0.39%.It is a tiny proportion. 
+From the calculation above, the proportions of negative value is 0.39%.It is a tiny proportion. But with big value, there is a larger proportion, even with several very high values (above 100).
+
+5. Explore the main question of interest at three different spatial levels.Create exploratory plots (e.g. boxplots, histograms, line plots) and summary statistics that best suit each level of data. Be sure to write up explanations of what you observe in these data.
+For the convenience explore, we remove the negative value and value >100.
+```{r}
+pm_2004 <- pm_2004[pm_2004$`Daily Mean PM2.5 Concentration` >0]
+pm_2004<- pm_2004[pm_2004$`Daily Mean PM2.5 Concentration`<=100]
+pm_2019 <- pm_2019[pm_2019$`Daily Mean PM2.5 Concentration` >0]
+pm_2019<- pm_2019[pm_2019$`Daily Mean PM2.5 Concentration`<=100]
+pm <- pm[pm$PM2.5_Concentration >0]
+pm<- pm[pm$PM2.5_Concentration<=100]
+```
+
+ a) state
+```{r}
+boxplot(pm$PM2.5_Concentration~pm$Year)
+```
+```{r}
+par(mfrow=c(2,1))
+hist(subset(pm$PM2.5_Concentration, Year == 2004))
+hist(subset(pm$PM2.5_Concentration, Year == 2019))
+```
+For state level, 
+1) From the box plot, we can find the average level of pm2.5 for 2004 is higher than 2019. The level has decreased over last 15 years.
+2) From the histogram, more frequency of 0-20 concentration in 2019 than in 2004.2004 has more frequency of the higher level of pm2.5.
+
+
+b) county
+```{r}
+county_04 <- aggregate(pm_2004$`Daily Mean PM2.5 Concentration`, by=list(type=pm_2004$COUNTY), mean)
+county_19 <- aggregate(pm_2019$`Daily Mean PM2.5 Concentration`, by=list(type=pm_2019$COUNTY), mean)
+county_04
+county_19
+boxplot(county_04$x,county_19$x, xlab = "Year")
+```
+From the plot shown above, couny has the decreasing PM2.5 concentration from 2004 to 2019.
+
+c)site in Los Angeles
+```{r}
+pm_la <- pm[pm$COUNTY_CODE == 37]
+boxplot(pm_la$PM2.5_Concentration~pm_la$Year)
+```
+Similar to state level, from the box plot, we can find the average level of pm2.5 for 2004 is higher than 2019. The level has decreased over last 15 years.
 
