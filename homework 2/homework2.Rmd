@@ -53,3 +53,80 @@ nrow(individual)
 #We find that "data" and "individual" have same number of rows. There is no duplicates.
 ```
 
+In the case of missing values, impute data using the average within the variables “male” and “hispanic.” 
+```{r}
+data[ , bmi_imp := fcoalesce(bmi, mean(bmi, na.rm = TRUE)),
+      by = .(male , hispanic)]
+data[ , fev_imp := fcoalesce(fev, mean(fev, na.rm = TRUE)),
+      by = .(male , hispanic)]
+```
+
+2. Create a new categorical variable named “obesity_level” using the BMI measurement (underweight BMI<14; normal BMI 14-22; overweight BMI 22-24; obese BMI>24). 
+```{r}
+data[, 
+    obesity_level := 
+      case_when(bmi_imp < 14 ~ "Underweight",
+                bmi_imp >= 13 & bmi_imp <22 ~ "Normal",
+                bmi_imp >= 22 & bmi_imp < 24 ~ "Overweight",
+                bmi_imp >24 ~"Obese")
+]
+head(data)
+```
+
+To make sure the variable is rightly coded, create a summary table that contains the minimum BMI, maximum BMI, and the total number of observations per category.
+```{r}
+data%>%
+group_by(obesity_level)%>%
+summarise(
+  min_bmi = min(bmi_imp, na.rm = TRUE),
+  max_bmi = max(bmi_imp, na.rm = TRUE),
+  total_obs = n()) %>%
+knitr::kable()
+```
+
+3. Create another categorical variable named “smoke_gas_exposure” that summarizes “Second Hand Smoke” and “Gas Stove.” The variable should have four categories in total.
+```{r}
+data[, 
+    smoke_gas_exposure := 
+      case_when(smoke == 0 & gasstove == 0 ~ "no exposure",
+                smoke == 1 & gasstove == 0  ~ "smoke exposure",
+                smoke == 0 & gasstove == 1 ~ "gas exposure",
+                smoke == 1 & gasstove == 1 ~ "both exposure")
+]
+head(data)
+```
+4. Create four summary tables showing the average (or proportion, if binary) and sd of “Forced expiratory volume in 1 second (ml)” and asthma indicator by town, sex, obesity level, and “smoke_gas_exposure.”
+
+```{r by-town}
+data[ , .(
+  avg_fev1 = mean(fev_imp, na.rm= TRUE),
+  sd_fev1 = sd(fev_imp, na.rm = TRUE),
+  percent_asthma = sum(asthma, na.rm = TRUE)/sum(!is.na(asthma))),
+  by = townname][order(townname)]%>% head(n=10)
+```
+
+```{r by-sex}
+data[ , .(
+  avg_fev1 = mean(fev_imp, na.rm= TRUE),
+  sd_fev1 = sd(fev_imp, na.rm = TRUE),
+  percent_asthma = sum(asthma, na.rm = TRUE)/sum(!is.na(asthma))),
+  by = male][order(male)]%>% head(n=10)
+```
+```{r by-obesity_level}
+data[ , .(
+  avg_fev1 = mean(fev_imp, na.rm= TRUE),
+  sd_fev1 = sd(fev_imp, na.rm = TRUE),
+  percent_asthma = sum(asthma, na.rm = TRUE)/sum(!is.na(asthma))),
+  by = obesity_level][order(obesity_level)]%>% head(n=10)
+```
+
+```{r by-smoke_gas_exposure}
+data[ , .(
+  avg_fev1 = mean(fev_imp, na.rm= TRUE),
+  sd_fev1 = sd(fev_imp, na.rm = TRUE),
+  percent_asthma = sum(asthma, na.rm = TRUE)/sum(!is.na(asthma))),
+  by = smoke_gas_exposure][order(smoke_gas_exposure)]%>% head(n=10)
+```
+
+Looking at the Data (EDA)
+
