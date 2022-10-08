@@ -1,0 +1,55 @@
+---
+title: "Homework2"
+author: "Chen Chen 6381370662"
+date: "`r Sys.Date()`"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(webshot)
+```
+
+```{r library-packages}
+library(lubridate)
+library(tidyverse)
+library(data.table)
+library(dtplyr)
+library(dplyr)
+library(ggplot2)
+```
+
+
+Data Wrangling
+```{r read-data}
+if (!file.exists("/Users/apple/Desktop/pm566/PM566-Homework/homework 2/chs_individual.csv")){
+  download.file("https://raw.githubusercontent.com/USCbiostats/data-science-data/master/01_chs/chs_individual.csv", "chs_individual.csv", method="libcurl", timeout = 60)
+}
+individual <- data.table::fread("/Users/apple/Desktop/pm566/PM566-Homework/homework 2/chs_individual.csv")
+
+if (!file.exists("/Users/apple/Desktop/pm566/PM566-Homework/homework 2/chs_regional.csv")){
+  download.file("https://raw.githubusercontent.com/USCbiostats/data-science-data/master/01_chs/chs_regional.csv", "chs_regional.csv", method="libcurl", timeout = 60)
+}
+individual <- data.table::fread("/Users/apple/Desktop/pm566/PM566-Homework/homework 2/chs_individual.csv")
+regional <- data.table::fread("/Users/apple/Desktop/pm566/PM566-Homework/homework 2/chs_regional.csv")
+```
+
+```{r merge-data}
+data<-
+  merge(
+    x= individual,
+    y= regional,
+    by.x = "townname",
+    by.y = "townname",
+    all.x = TRUE,
+    all.y = FALSE
+  )
+```
+
+1. After merging the data, make sure you don’t have any duplicates by counting the number of rows. Make sure it matches.
+```{r}
+nrow(data)
+nrow(individual)
+#We find that "data" and "individual" have same number of rows. There is no duplicates.
+```
+
