@@ -129,4 +129,82 @@ data[ , .(
 ```
 
 Looking at the Data (EDA)
+The primary questions of interest are:
+1. What is the association between BMI and FEV (forced expiratory volume)? 
+2. What is the association between smoke and gas exposure and FEV?
+3. What is the association between PM2.5 exposure and FEV?
 
+Follow the EDA checklist from week 3 and the previous assignment. Be sure to focus on the key variables.
+```{r}
+#check the dimensions, headers, footers, variable names and variable types
+dim(data)
+head(data)
+tail(data)
+str(data)
+```
+
+```{r}
+# Check for any data issues, particularly in the key variable we are analyzing.
+table(data$bmi_imp)
+summary(data$bmi_imp)
+table(data$fev_imp)
+summary(data$fev_imp)
+table(data$smoke_gas_exposure)
+summary(data$smoke_gas_exposure)
+table(data$pm25_mass)
+summary(data$pm25_mass)
+```
+
+Visualization Create the following figures and interpret them. Be sure to include easily understandable axes, titles, and legends.
+
+1. Facet plot showing scatterplots with regression lines of BMI vs FEV by “townname”.
+```{r}
+data[!is.na(bmi_imp)& !is.na(fev_imp)] %>% 
+  ggplot(mapping = aes(x= fev_imp,y=bmi_imp)) + 
+  geom_point(mapping=aes(color=townname)) + 
+  geom_smooth(method = lm, mapping = aes(linetype=townname))+
+facet_wrap(~townname, nrow=4)
+```
+
+2. Stacked histograms of FEV by BMI category and FEV by smoke/gas exposure. Use different color schemes than the ggplot default.
+```{r}
+ggplot(data, aes(fev_imp, fill= obesity_level))+ geom_histogram(binwidth=300)+ggtitle("Histogram of FEV by obesity level category")+scale_fill_brewer(palette = 3)
+```
+```{r}
+ggplot(data, aes(fev_imp, fill= smoke_gas_exposure))+ geom_histogram(binwidth=200)+ggtitle("Histogram of FEV by gas&smoke exposure category")+scale_fill_brewer(palette = 5)
+```
+3. Barchart of BMI by smoke/gas exposure.
+```{r}
+data%>%
+ggplot(mapping = aes(x= obesity_level, fill = smoke_gas_exposure))+geom_bar()+ggtitle("Barchart of BMI by smoke&gas exposure")
+```
+
+4. Statistical summary graphs of FEV by BMI and FEV by smoke/gas exposure category.
+```{r}
+data%>%
+ggplot()+stat_summary(mapping=aes(x=obesity_level, y= fev_imp),
+                      fun.data = mean_sdl)+ggtitle("Statistical summary graphs of FEV by obesity level")
+```
+
+```{r}
+data%>%
+ggplot()+stat_summary(mapping=aes(x=smoke_gas_exposure, y= fev_imp),
+                      fun.data = mean_sdl)+ggtitle("Statistical summary graphs of fev by smoke&gas exposure")
+
+```
+5. A leaflet map showing the concentrations of PM2.5 mass in each of the CHS communities.
+```{r}
+library(leaflet)
+pal <- colorFactor(c('red', 'blue'), domain= data$pm25_mass)
+map <- leaflet(data) %>%
+  addProviderTiles('OpenStreetMap') %>%
+  addCircles(lng=data$lon, lat=data$lat, opacity=1, fillOpacity=1, radius = 50, color = ~pal(data$pm25_mass))
+map
+```
+
+6. Choose a visualization to examine whether PM2.5 mass is associated with FEV
+```{r}
+ggplot(data=data)+geom_point(mapping=aes(x=fev_imp, y=pm25_mass))+ggtitle("pm2.5 mass with FEV")
+```
+
+Conclusion:with the increase of pm2.5 mass, the fev level lightly decreases.
