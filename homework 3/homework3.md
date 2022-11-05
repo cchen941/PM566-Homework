@@ -25,10 +25,10 @@ library(tidytext)
 library(forcats)
 ```
 
-1.  Using the NCBI API, look for papers that show up under the term
-    “sars-cov-2 trial vaccine” Look for the data in the pubmed database,
-    and then retrieve the details of the paper as shown in lab 7. How
-    many papers were you able to find?
+**APIs** 1. Using the NCBI API, look for papers that show up under the
+term “sars-cov-2 trial vaccine” Look for the data in the pubmed
+database, and then retrieve the details of the paper as shown in lab 7.
+How many papers were you able to find?
 
 a). How many papers we are able to find under the term “sars-cov-2 trial
 vaccine”.
@@ -155,3 +155,143 @@ knitr::kable(database[1:8,], caption = "Some papers about sars-cov-2 trial vacci
 | 36301821 | Immunogenicity and reactogenicity of SARS-CoV-2 vaccines in people living with HIV in the Netherlands: A nationwide prospective cohort study.                                                                         | Vaccines can be less immunogenic in people living with HIV (PLWH), but for SARS-CoV-2 vaccinations this is unknown. In this study we set out to investigate, for the vaccines currently approved in the Netherlands, the immunogenicity and reactogenicity of SARS-CoV-2 vaccinations in PLWH. We conducted a prospective cohort study to examine the immunogenicity of BNT162b2, mRNA-1273, ChAdOx1-S, and Ad26.COV2.S vaccines in adult PLWH without prior COVID-19, and compared to HIV-negative controls. The primary endpoint was the anti-spike SARS-CoV-2 IgG response after mRNA vaccination. Secondary endpoints included the serological response after vector vaccination, anti-SARS-CoV-2 T-cell response, and reactogenicity. Between 14 February and 7 September 2021, 1,154 PLWH (median age 53 \[IQR 44-60\] years, 85.5% male) and 440 controls (median age 43 \[IQR 33-53\] years, 28.6% male) were included in the final analysis. Of the PLWH, 884 received BNT162b2, 100 received mRNA-1273, 150 received ChAdOx1-S, and 20 received Ad26.COV2.S. In the group of PLWH, 99% were on antiretroviral therapy, 97.7% were virally suppressed, and the median CD4+ T-cell count was 710 cells/μL (IQR 520-913). Of the controls, 247 received mRNA-1273, 94 received BNT162b2, 26 received ChAdOx1-S, and 73 received Ad26.COV2.S. After mRNA vaccination, geometric mean antibody concentration was 1,418 BAU/mL in PLWH (95% CI 1322-1523), and after adjustment for age, sex, and vaccine type, HIV status remained associated with a decreased response (0.607, 95% CI 0.508-0.725, p \< 0.001). All controls receiving an mRNA vaccine had an adequate response, defined as \>300 BAU/mL, whilst in PLWH this response rate was 93.6%. In PLWH vaccinated with mRNA-based vaccines, higher antibody responses were predicted by CD4+ T-cell count 250-500 cells/μL (2.845, 95% CI 1.876-4.314, p \< 0.001) or \>500 cells/μL (2.936, 95% CI 1.961-4.394, p \< 0.001), whilst a viral load \> 50 copies/mL was associated with a reduced response (0.454, 95% CI 0.286-0.720, p = 0.001). Increased IFN-γ, CD4+ T-cell, and CD8+ T-cell responses were observed after stimulation with SARS-CoV-2 spike peptides in ELISpot and activation-induced marker assays, comparable to controls. Reactogenicity was generally mild, without vaccine-related serious adverse events. Due to the control of vaccine provision by the Dutch National Institute for Public Health and the Environment, there were some differences between vaccine groups in the age, sex, and CD4+ T-cell counts of recipients. After vaccination with BNT162b2 or mRNA-1273, anti-spike SARS-CoV-2 antibody levels were reduced in PLWH compared to HIV-negative controls. To reach and maintain the same serological responses as HIV-negative controls, additional vaccinations are probably required. The trial was registered in the Netherlands Trial Register (NL9214). <https://www.trialregister.nl/trial/9214>.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | PLoS medicine                                | 2022 Oct        |
 
 Some papers about sars-cov-2 trial vaccine
+
+**Text Mining**
+
+First download and then read in with read.csv().
+
+``` r
+if (!file.exists("pubmed.csv")){
+  download.file(
+    url = "https://raw.githubusercontent.com/USCbiostats/data-science-data/master/03_pubmed/pubmed.csv",
+    destfile = 'pubmed.csv',
+    method="libcurl",
+    timeout = 60)
+}
+pubmed <- read.csv("pubmed.csv")
+pubmed <- as_tibble(pubmed)
+pubmed
+```
+
+    ## # A tibble: 3,241 × 2
+    ##    abstract                                                                term 
+    ##    <chr>                                                                   <chr>
+    ##  1 "Background and aims: Many patients with coronavirus disease 2019 (COV… covid
+    ##  2 "Introduction: Contradictory data have been reported on the incidence … covid
+    ##  3 "This article aims at collecting all information needed for dentists r… covid
+    ##  4 "OBJECTIVE. The objective of our study was to determine the misdiagnos… covid
+    ##  5 "Background: Much of the focus regarding the global pandemic of corona… covid
+    ##  6 "The World Health Organization (WHO) has issued a warning that, althou… covid
+    ##  7 "The coronavirus disease (COVID-19) has spread all around the world in… covid
+    ##  8 "Objective: The novel severe acute respiratory syndrome coronavirus 2 … covid
+    ##  9 "COVID-19 has been declared a global pandemic by the World Health Orga… covid
+    ## 10 "Background: Coronavirus disease 2019 (COVID-19) is a novel infectious… covid
+    ## # … with 3,231 more rows
+
+1.  Tokenize the abstracts and count the number of each token.
+
+``` r
+pubmed %>%
+  unnest_tokens(token, abstract) %>%
+  count(token, sort = TRUE)%>%
+  top_n(20,n)%>%
+  ggplot(aes(n, fct_reorder(token, n)))+geom_col()
+```
+
+![](homework3_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+
+1)  Do you see anything interesting? From the figure shown above, the
+    most frequent 20 words are most stop words and have not much
+    reference significance.
+
+b)Does removing stop words change what tokens appear as the most
+frequent?
+
+``` r
+pubmed %>%
+  unnest_tokens(token, abstract) %>%
+  anti_join(stop_words, by=c("token" = "word")) %>%
+  count(token, sort = TRUE)%>%
+  filter(!grepl(pattern = "^[0-9]+$", x= token)) %>%
+  top_n(20,n)%>%
+  ggplot(aes(n, fct_reorder(token, n)))+geom_col()
+```
+
+![](homework3_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
+Yes, the figure looks different.
+
+3)  What are the 5 most common tokens for each search term after
+    removing stopwords? The 5 most common tokens are: covid, patients,
+    cancer, prostate and disease.
+
+<!-- -->
+
+2.  Tokenize the abstracts into bigrams. Find the 10 most common bigram
+    and visualize them with ggplot2.
+
+``` r
+pubmed %>%
+  unnest_ngrams(bigram, abstract, n=2) %>%
+  count(bigram, sort = TRUE)%>%
+  top_n(10,n)%>%
+  ggplot(aes(n, fct_reorder(bigram, n)))+geom_col()
+```
+
+![](homework3_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+
+3.  Calculate the TF-IDF value for each word-search term combination.
+    (here you want the search term to be the “document”). What are the 5
+    tokens from each search term with the highest TF-IDF value?
+
+``` r
+pubmed %>%
+  unnest_tokens(token, abstract) %>%
+  count(term, token, sort= TRUE) %>%
+  bind_tf_idf(token, term, n) %>%
+  group_by(term)%>%
+  arrange(desc(tf_idf))%>%
+  top_n(5, tf_idf)%>%
+  arrange(term)%>%
+  knitr::kable()
+```
+
+| term            | token           |    n |        tf |       idf |    tf_idf |
+|:----------------|:----------------|-----:|----------:|----------:|----------:|
+| covid           | covid           | 7275 | 0.0371050 | 1.6094379 | 0.0597183 |
+| covid           | pandemic        |  800 | 0.0040803 | 1.6094379 | 0.0065670 |
+| covid           | coronavirus     |  647 | 0.0032999 | 1.6094379 | 0.0053110 |
+| covid           | sars            |  372 | 0.0018973 | 1.6094379 | 0.0030536 |
+| covid           | cov             |  334 | 0.0017035 | 1.6094379 | 0.0027417 |
+| cystic fibrosis | cf              |  625 | 0.0127188 | 0.9162907 | 0.0116541 |
+| cystic fibrosis | fibrosis        |  867 | 0.0176435 | 0.5108256 | 0.0090127 |
+| cystic fibrosis | cystic          |  862 | 0.0175417 | 0.5108256 | 0.0089608 |
+| cystic fibrosis | cftr            |   86 | 0.0017501 | 1.6094379 | 0.0028167 |
+| cystic fibrosis | sweat           |   83 | 0.0016891 | 1.6094379 | 0.0027184 |
+| meningitis      | meningitis      |  429 | 0.0091942 | 1.6094379 | 0.0147974 |
+| meningitis      | meningeal       |  219 | 0.0046935 | 1.6094379 | 0.0075539 |
+| meningitis      | pachymeningitis |  149 | 0.0031933 | 1.6094379 | 0.0051394 |
+| meningitis      | csf             |  206 | 0.0044149 | 0.9162907 | 0.0040453 |
+| meningitis      | meninges        |  106 | 0.0022718 | 1.6094379 | 0.0036562 |
+| preeclampsia    | eclampsia       | 2005 | 0.0142784 | 1.6094379 | 0.0229802 |
+| preeclampsia    | preeclampsia    | 1863 | 0.0132672 | 1.6094379 | 0.0213527 |
+| preeclampsia    | pregnancy       |  969 | 0.0069006 | 0.5108256 | 0.0035250 |
+| preeclampsia    | maternal        |  797 | 0.0056757 | 0.5108256 | 0.0028993 |
+| preeclampsia    | gestational     |  191 | 0.0013602 | 1.6094379 | 0.0021891 |
+| prostate cancer | prostate        | 3832 | 0.0311890 | 1.6094379 | 0.0501967 |
+| prostate cancer | androgen        |  305 | 0.0024824 | 1.6094379 | 0.0039953 |
+| prostate cancer | psa             |  282 | 0.0022952 | 1.6094379 | 0.0036940 |
+| prostate cancer | prostatectomy   |  215 | 0.0017499 | 1.6094379 | 0.0028164 |
+| prostate cancer | castration      |  148 | 0.0012046 | 1.6094379 | 0.0019387 |
+
+The tables shows 5 tokens from each search term with the highest TF-IDF
+value.
+
+2)  How are the results different from your answers in question 1?
+
+The 5 most common tokens from question 1 are covid, patients, cancer,
+prostate, and disease. These are common words accounted for in the
+healthcare abstract and have no specification in each search field. But
+from the table above, 5 words from each search term are more specific
+and more relevant to each search field. Therefore, the mining processes
+in problem 3 are more effective and significant.

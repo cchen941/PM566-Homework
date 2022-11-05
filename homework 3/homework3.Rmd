@@ -20,6 +20,8 @@ library(forcats)
 ```
 
 
+**APIs**
+
 1. Using the NCBI API, look for papers that show up under the term “sars-cov-2 trial vaccine” Look for the data in the pubmed database, and then retrieve the details of the paper as shown in lab 7. How many papers were you able to find?
 
 a). How many papers we are able to find under the term “sars-cov-2 trial vaccine”.
@@ -115,6 +117,7 @@ abstracts <- str_replace_all(abstracts, "[[:space:]]+"," ")
 ```
 
 c) Finally the dataset:
+
 ```{r}
 database <- data.frame(
   PubMedId = ids,
@@ -126,3 +129,81 @@ database <- data.frame(
 knitr::kable(database[1:8,], caption = "Some papers about sars-cov-2 trial vaccine")
 ```
 
+
+**Text Mining**
+
+First download and then read in with read.csv().
+
+```{r}
+if (!file.exists("pubmed.csv")){
+  download.file(
+    url = "https://raw.githubusercontent.com/USCbiostats/data-science-data/master/03_pubmed/pubmed.csv",
+    destfile = 'pubmed.csv',
+    method="libcurl",
+    timeout = 60)
+}
+pubmed <- read.csv("pubmed.csv")
+pubmed <- as_tibble(pubmed)
+pubmed
+```
+
+
+1. Tokenize the abstracts and count the number of each token. 
+
+```{r}
+pubmed %>%
+  unnest_tokens(token, abstract) %>%
+  count(token, sort = TRUE)%>%
+  top_n(20,n)%>%
+  ggplot(aes(n, fct_reorder(token, n)))+geom_col()
+```
+
+a) Do you see anything interesting? 
+From the figure shown above, the most frequent 20 words are most stop words and have not much reference significance.
+
+b)Does removing stop words change what tokens appear as the most frequent? 
+
+```{r}
+pubmed %>%
+  unnest_tokens(token, abstract) %>%
+  anti_join(stop_words, by=c("token" = "word")) %>%
+  count(token, sort = TRUE)%>%
+  filter(!grepl(pattern = "^[0-9]+$", x= token)) %>%
+  top_n(20,n)%>%
+  ggplot(aes(n, fct_reorder(token, n)))+geom_col()
+```
+
+Yes, the figure looks different.
+
+c) What are the 5 most common tokens for each search term after removing stopwords?
+The 5 most common tokens are: covid, patients, cancer, prostate and disease.
+
+2. Tokenize the abstracts into bigrams. Find the 10 most common bigram and visualize them with ggplot2.
+
+```{r}
+pubmed %>%
+  unnest_ngrams(bigram, abstract, n=2) %>%
+  count(bigram, sort = TRUE)%>%
+  top_n(10,n)%>%
+  ggplot(aes(n, fct_reorder(bigram, n)))+geom_col()
+```
+
+3. Calculate the TF-IDF value for each word-search term combination. (here you want the search term to be the “document”). What are the 5 tokens from each search term with the highest TF-IDF value? 
+
+```{r}
+pubmed %>%
+  unnest_tokens(token, abstract) %>%
+  count(term, token, sort= TRUE) %>%
+  bind_tf_idf(token, term, n) %>%
+  group_by(term)%>%
+  arrange(desc(tf_idf))%>%
+  top_n(5, tf_idf)%>%
+  arrange(term)%>%
+  knitr::kable()
+```
+
+The tables shows 5 tokens from each search term with the highest TF-IDF value.
+
+b) How are the results different from your answers in question 1?
+
+The 5 most common tokens from question 1 are covid, patients, cancer, prostate, and disease. These are common words accounted for in the healthcare abstract and have no specification in each search field. But from the table above, 5 words from each search term are more specific and more relevant to each search field. Therefore, the mining processes in problem 3 are more effective and significant.
